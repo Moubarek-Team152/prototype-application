@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="تطبيق ويب لمشاهدة القنوات التلفزيونية المباشرة والرياضة">
+    <meta name="keywords" content="live tv, sports, streaming, arabic, قنوات مباشرة, رياضة">
+    <meta name="author" content="Live TV App">
+    <title>Live TV App - قنوات مباشرة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+
+        :root {
+            --color-background: #121212;
+            --color-card: #1E1E1E;
+            --color-text-primary: #FFFFFF;
+            --color-text-secondary: #AAAAAA;
+            --color-primary: #03DA9D;
+            --color-live: #FF4141;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #e0e5ec;
+            color: var(--color-text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .phone-mockup {
+            width: 380px;
+            height: 750px;
+            background-color: var(--color-background);
+            border: 12px solid #111;
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #splash-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-background);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease-out;
+            opacity: 1;
+        }
+        
+        .logo-container { text-align: center; }
+        .logo-splash {
+            font-size: 4rem;
+            font-weight: 700;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        .loading-text {
+            color: var(--color-text-secondary);
+            margin-top: 1rem;
+            font-size: 1rem;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #app-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background-color: var(--color-card);
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 50;
+        }
+        .logo { font-size: 1.6rem; font-weight: 700; }
+        .menu-icon { font-size: 1.5rem; cursor: pointer; }
+        
+        #fullscreen-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 10, 10, 0.8);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s;
+        }
+
+        #fullscreen-menu.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .menu-close-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 2rem;
+            color: var(--color-text-primary);
+            cursor: pointer;
+        }
+
+        #fullscreen-menu a {
+            color: var(--color-text-primary);
+            text-decoration: none;
+            font-size: 1.75rem;
+            font-weight: 600;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            
+            opacity: 0;
+            transform: translateY(20px);
+            animation: menuItemFadeIn 0.5s forwards;
+        }
+        
+        #fullscreen-menu.show a:nth-of-type(1) { animation-delay: 0.2s; }
+        #fullscreen-menu.show a:nth-of-type(2) { animation-delay: 0.3s; }
+        #fullscreen-menu.show a:nth-of-type(3) { animation-delay: 0.4s; }
+
+        @keyframes menuItemFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 1.5rem 1rem; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .section-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-primary); }
+        .bottom-nav { height: 65px; background-color: var(--color-card); border-top: 1px solid #333; display: flex; justify-content: space-around; align-items: center; flex-shrink: 0; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--color-text-secondary); font-size: 0.75rem; text-decoration: none; flex-basis: 50%; padding: 0.5rem 0; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+        .nav-item.active { color: var(--color-primary); }
+        .match-card { background-color: var(--color-card); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; cursor: pointer; }
+        .team { display: flex; flex-direction: column; align-items: center; width: 80px; }
+        .team img { width: 40px; height: 40px; object-fit: cover; margin-bottom: 0.5rem; background-color: #fff; border-radius: 50%; }
+        .team-name { font-size: 0.9rem; font-weight: 700; text-align: center; white-space: nowrap; }
+        .match-info { text-align: center; flex-grow: 1; }
+        .match-league { font-size: 0.8rem; color: var(--color-text-secondary); }
+        
+        .match-status {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+        .live-now {
+            color: var(--color-live);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .category-list-item { background-color: var(--color-card); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; border: 1px solid #333; cursor: pointer; text-decoration: none; color: var(--color-text-primary); }
+        .category-list-item i { font-size: 1.8rem; color: var(--color-primary); margin-left: 1rem; width: 40px; text-align: center; }
+        .category-list-item span { font-size: 1.1rem; font-weight: 700; flex-grow: 1; }
+        .category-list-item .arrow-icon { font-size: 1.2rem; color: var(--color-text-secondary); }
+        .header-bar { display: flex; align-items: center; margin-bottom: 1.5rem; }
+        .header-title { font-size: 1.2rem; font-weight: 700; color: var(--color-primary); flex-grow: 1; text-align: center; }
+        .back-button { font-size: 1.4rem; cursor: pointer; }
+        .channel-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .channel-grid-item { background-color: #FFFFFF; color: #121212; border-radius: 12px; padding: 0.75rem 0.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 1 / 1.2; cursor: pointer; }
+        .channel-grid-logo { width: 90%; max-height: 60px; object-fit: contain; margin-bottom: 0.5rem; }
+        .channel-grid-name { font-size: 0.8rem; font-weight: 700; text-align: center; }
+
+    </style>
+</head>
+<body>
+    <div class="phone-mockup">
+        <div id="app-content">
+            <header class="top-bar">
+                <div class="logo">Logo</div>
+                <i class="fas fa-bars menu-icon" id="menu-icon"></i>
+            </header>
+
+            <main class="main-content">
+                <div id="page-live-tv" class="page active">
+                    <h2 class="section-title">مباشر الآن</h2>
+                    <div class="match-card" onclick="goToPlayer()">
+                        <div class="team">
+                            <img src="https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_96x96.png" alt="Team A">
+                            <span class="team-name">ريال مدريد</span>
+                        </div>
+                        <div class="match-info">
+                            <div class="match-status live-now"><i class="fas fa-circle" style="font-size: 0.7rem;"></i> مباشر</div>
+                            <div class="match-league">الدوري الإسباني</div>
+                        </div>
+                        <div class="team">
+                            <img src="https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_96x96.png" alt="Team B">
+                            <span class="team-name">برشلونة</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="page-live-event" class="page">
+                     <h2 class="section-title">التصنيفات</h2>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-futbol"></i>
+                        <span>رياضة</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-newspaper"></i>
+                        <span>أخبار</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-film"></i>
+                        <span>أفلام</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-child"></i>
+                        <span>أطفال</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>وثائقيات</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                    <div class="category-list-item" onclick="showPage('page-channel-list')">
+                        <i class="fas fa-music"></i>
+                        <span>موسيقى</span>
+                        <i class="fas fa-chevron-left arrow-icon"></i>
+                    </div>
+                </div>
+                
+                <div id="page-channel-list" class="page">
+                    <div class="header-bar">
+                        <i class="fas fa-arrow-right back-button" onclick="showPage('page-live-event')"></i>
+                        <h2 class="header-title">قنوات الرياضة</h2>
+                    </div>
+                    <div class="channel-grid">
+                        <div class="channel-grid-item" onclick="goToPlayer()">
+                            <img src="https://beinsports.pro/wp-content/uploads/2023/07/logo.png" alt="Logo" class="channel-grid-logo">
+                            <span class="channel-grid-name">beIN Sport 1</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <nav class="bottom-nav">
+                <div class="nav-item active" onclick="navigate('page-live-tv', this)">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Live Event</span>
+                </div>
+                <div class="nav-item" onclick="navigate('page-live-event', this)">
+                    <i class="fas fa-tv"></i>
+                    <span>Live TV</span>
+                </div>
+            </nav>
+        </div>
+
+        <div id="splash-screen">
+            <div class="logo-container">
+                <div class="logo-splash">Logo</div>
+                <div class="loading-text">كرة القدم.. لعبة الفقراء التي سرقها الأغنياء!</div>
+            </div>
+        </div>
+        
+        <div id="fullscreen-menu">
+            <i class="fas fa-times menu-close-btn" id="menu-close-btn"></i>
+            <a href="#"><i class="fab fa-facebook-f"></i> تواصل اجتماعي</a>
+            <a href="#"><i class="fas fa-envelope"></i> البريد الإلكتروني</a>
+            <a href="#"><i class="fas fa-shield-alt"></i> سياسة الخصوصية</a>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Splash Screen Logic ---
+            setTimeout(function() {
+                const splashScreen = document.getElementById('splash-screen');
+                splashScreen.style.opacity = '0';
+                setTimeout(function() {
+                    splashScreen.style.display = 'none';
+                }, 500);
+            }, 2500);
+
+            // --- Fullscreen Menu Logic ---
+            const menuIcon = document.getElementById('menu-icon');
+            const fullscreenMenu = document.getElementById('fullscreen-menu');
+            const menuCloseBtn = document.getElementById('menu-close-btn');
+
+            menuIcon.addEventListener('click', function() {
+                fullscreenMenu.classList.add('show');
+            });
+
+            menuCloseBtn.addEventListener('click', function() {
+                fullscreenMenu.classList.remove('show');
+            });
+        });
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function navigate(pageId, navElement) {
+            showPage(pageId);
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            navElement.classList.add('active');
+        }
+        
+        function goToPlayer() {
+            window.location.href = 'player_landscape.html';
+        }
+    </script>
+</body>
+</html>
+
